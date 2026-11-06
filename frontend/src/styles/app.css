@@ -1,0 +1,25 @@
+body {
+  margin: 0;
+  font: 1rem/1.5 system-ui, sans-serif;
+  color: #172033;
+  background: #f4f6fa;
+}
+
+.shell {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+header {
+  border-bottom: 1px solid #dce2eb;
+}
+
+.status {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: #e8edf5;
+}
+
+.status--success { color: #146238; }
+.status--error { color: #9b2929; }
