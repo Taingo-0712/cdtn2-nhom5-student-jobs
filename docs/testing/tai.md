@@ -35,3 +35,103 @@
 - Tạo `backend/tests/app.test.js` đúng mẫu được cung cấp, kiểm tra health, CORS và cấu trúc lỗi 404.
 - Từ gốc repo, chạy `npm.cmd --prefix backend test`: đạt 16/16 test, 0 lỗi, gồm test mới và các test foundation hiện có.
 - Từ gốc repo, chạy `npm.cmd --prefix frontend run build`: thành công, Vite xuất kết quả vào `frontend/dist/` (được Git bỏ qua).
+
+## T02 — Migration Demo 1 — 06/11/2026
+
+- Nhánh: `feat/tai-t02-tao-bang-va-du-lieu-mau`. Đã đọc `AGENTS.md` và đối chiếu `Database_Schema_va_quy_trinh_cap_nhat_Nhom5_v2.1.docx` trong Downloads, mục 2–7. Không phát hiện khác biệt giữa SQL V001–V005 và schema v2.1.
+- Giữ nguyên V001/V002. SHA-256 lần lượt: `4532259fbb270350dcbb780fa6461662426ea41b25207f1621c34efe4ec6c318`, `d7a39d3bf55743d47a1542be2005895776ee0875e87d14acf2604f63a6ad600e`.
+- Thêm V003 applications, V004 reviews, V005 chỉ mục đúng SQL được cung cấp. Mỗi file chỉ chứa SQL tương ứng.
+- Thêm `backend/scripts/migrate.js` và script `db:migrate` trong `backend/package.json`: đọc file theo phiên bản, SHA-256, khóa advisory cấp session trên cùng client `pg`, transaction riêng cho SQL và lịch sử từng file; kiểm tra toàn bộ lịch sử trước khi áp dụng mới, bỏ qua checksum khớp và dừng khi lệch.
+- Thêm `backend/tests/migrations.test.js`: dùng DB `student_jobs_nhom5_t02_test` riêng trong phiên test; kiểm tra `current_database()` và DB trống. Nếu DB đó đã có bảng, giữ nguyên và tạo DB test tên có hậu tố. Dữ liệu thử FK/UQ/CHECK được rollback, giữ lại DB test để xem kết quả.
+- Không sửa `backend/.env`, `docs/api-contract.md` hoặc các file `.gitkeep`. Không commit/push. Trong phiên này người dùng lưu thông tin kết nối vào `.env.example`; chỉ nạp hai giá trị vào môi trường tiến trình test khi `.env` còn trống, không ghi sang file khác và không in giá trị. Cần đưa thông tin riêng vào `.env` và làm trống file mẫu trước khi commit.
+
+Lệnh kiểm tra cú pháp đã chạy trong `backend/`:
+
+```powershell
+node --check scripts/migrate.js
+node --check tests/migrations.test.js
+npm.cmd test
+```
+
+Sau khi nạp thông tin kết nối chỉ vào môi trường tiến trình, đã chạy:
+
+```powershell
+node --test tests/migrations.test.js
+npm.cmd run db:migrate
+npm.cmd test
+```
+
+Lần gọi `db:migrate` dùng `DB_URL=postgresql://localhost:5432/student_jobs_nhom5_t02_test` riêng cho tiến trình. Hai lượt test PostgreSQL dùng `RUN_DB_TESTS=1`, không thay `.env`. Cách chạy lại sau khi cấu hình đúng `.env` (từ `backend/`):
+
+```powershell
+$env:RUN_DB_TESTS = '1'
+try {
+  node --env-file-if-exists=.env --test tests/migrations.test.js
+} finally {
+  Remove-Item Env:RUN_DB_TESTS
+}
+```
+
+- Kiểm tra cú pháp JS và đọc thứ tự V001–V005/hash V001/V002: đạt.
+- `npm.cmd test` mặc định: 16 pass, 0 fail, 1 skip (bộ PostgreSQL chỉ bật khi `RUN_DB_TESTS=1`).
+- Lượt PostgreSQL riêng: 9 pass, 0 fail. Lượt toàn bộ backend với `RUN_DB_TESTS=1`: **25 pass, 0 fail, 0 skip**.
+- PostgreSQL thực tế: **16.15**. Trước mỗi lượt migration mới đều xác nhận đúng `current_database()` và không có bảng người dùng.
+- Lượt đầu dùng DB trống `student_jobs_nhom5_t02_test`. Lượt toàn bộ test phát hiện DB này đã có 8 bảng (7 nghiệp vụ + lịch sử), giữ nguyên và tự tạo DB test trống `student_jobs_nhom5_t02_test_1793927692524_5a76996a`.
+- Cả hai DB test được giữ lại để kiểm tra; dữ liệu thử chèn vào để kiểm tra FK/UQ/CHECK đã rollback. Không tạo file CV thật.
+- `npm.cmd run db:migrate` trên DB test sau lượt đầu: áp dụng 0, bỏ qua 5, checksum khớp.
+
+| Ca PostgreSQL cần báo cáo | Kết quả thực tế |
+|---|---|
+| Lần đầu đủ 7 bảng nghiệp vụ, 5 dòng lịch sử, 7 index | ĐẠT |
+| Lần hai bỏ qua 5 file, không đổi lịch sử | ĐẠT |
+| FK chặn student_id không tồn tại, SQLSTATE 23503 | ĐẠT |
+| UNIQUE chặn trùng student_id/job_id với hai khóa CV khác nhau, 23505 | ĐẠT |
+| CHECK chặn salary_max < salary_min, 23514 | ĐẠT |
+| Checksum lệch bị từ chối; SQL lỗi rollback DDL/lịch sử; runner thứ hai đợi khóa | ĐẠT cả 3 ca |
+
+## T02 — Cấu hình và seed Demo 1 — 06/11/2026
+
+- Đã chuyển thông tin kết nối PostgreSQL từ `.env.example` sang `.env`: user `postgres`, DB phát triển `student_jobs_nhom5`; giữ nguyên giá trị mật khẩu, không in ra terminal/chat. File mẫu có `DB_USERNAME=`, `DB_PASSWORD=`, `JWT_SECRET=` trống.
+- `git check-ignore -v -- backend/.env`: khớp `.gitignore:3:.env`. `git ls-files -- backend/.env`: trống. `git status --short -- backend/.env backend/.env.example`: trống sau khi file mẫu trở về đúng bản đã theo dõi.
+- Thêm `backend/seeds/demo.js`, `backend/scripts/seed-demo.js`, `backend/tests/seed-demo.test.js`; khai báo `db:seed:demo` trong `backend/package.json`. Bổ sung cách chạy, tài khoản demo và quy tắc chạy lại trong README.
+- Theo Schema v2.1 mục 8.1: 2 NTD, 3 SV, hồ sơ đúng vai trò, danh mục Bán hàng/Phục vụ/Gia sư. Dùng ID tự sinh, email chuẩn hóa, bcrypt cost 12; không tạo Admin/tin/đơn/CV.
+- Toàn bộ seed chạy trong một transaction, dùng advisory lock cùng khóa với migration. Chạy lại giữ nguyên tài khoản/hồ sơ/danh mục có sẵn, không reset mật khẩu; xung đột vai trò/hồ sơ làm rollback toàn bộ lượt seed.
+
+Lệnh đã chạy trong `backend/`:
+
+```powershell
+$env:RUN_DB_TESTS = '1'
+try {
+  node --env-file-if-exists=.env --test
+} finally {
+  Remove-Item Env:RUN_DB_TESTS
+}
+```
+
+- **31 pass, 0 fail, 0 skip**, gồm 16 test Express/JWT, 9 test migration và 6 test seed (tính cả test cha).
+- DB migration của lượt này: `student_jobs_nhom5_t02_test_1793928103396_99de4a2f`. DB seed riêng: `student_jobs_nhom5_t02_seed_1793928103183_f1fff39a`. Đã kiểm tra `current_database()` và DB trống trước migration.
+- Seed test đạt: đúng 5 tài khoản/hồ sơ và 3 danh mục; bcrypt xác minh được mật khẩu mẫu; lượt hai không đổi số lượng, ID, hash hay thời gian; giữ mật khẩu/hồ sơ đã chỉnh; xung đột vai trò rollback cả tài khoản vừa tạo trước đó.
+
+Đã xác nhận `current_database() = student_jobs_nhom5_t02_test`, rồi ghi đè `DB_URL` chỉ trong môi trường phiên PowerShell và chạy lệnh npm thực tế hai lần:
+
+```powershell
+npm.cmd run db:seed:demo
+npm.cmd run db:seed:demo
+```
+
+| Lượt seed trên DB test | Tài khoản | Hồ sơ | Danh mục |
+|---|---|---|---|
+| 1 | Tạo 5, giữ 0 | Tạo 5, giữ 0 | Tạo 3, giữ 0 |
+| 2 | Tạo 0, giữ 5 | Tạo 0, giữ 5 | Tạo 0, giữ 3 |
+
+SELECT sau hai lượt: **5 users, 2 employer_profiles, 3 student_profiles, 3 job_categories**. Giữ lại DB test để xem. Không seed vào database phát triển trong phiên này.
+
+Giữ nguyên V001–V005, sửa local ở `docs/api-contract.md` và các `.gitkeep`. Chưa stage/commit/push. Chưa kiểm thử đăng nhập qua API/giao diện vì thuộc T03.
+
+## T02 — Xác nhận trên database phát triển và bàn giao — 06/11/2026
+
+- Database phát triển: `student_jobs_nhom5`. V001–V005 đã áp dụng, có đủ 5 dòng trong `public.schema_migrations`.
+- Tài xác nhận seed lần đầu tạo **5 tài khoản, 5 hồ sơ, 3 danh mục**; lần hai giữ nguyên số lượng. Kiểm tra SELECT trước commit xác nhận `current_database() = student_jobs_nhom5` và hiện có **5 users, 2 employer_profiles, 3 student_profiles, 3 job_categories**. Lượt kiểm tra này chỉ đọc dữ liệu, không chạy lại migration/seed.
+- Kết quả bộ backend trước khi thêm test seed: **25 pass, 0 fail, 0 skip**, gồm 16 test Express/JWT và 9 test migration. Đây là lượt riêng với kết quả **31 pass, 0 fail, 0 skip** sau khi bổ sung test seed đã ghi ở trên.
+- Chạy từ `backend/`: `npm.cmd run db:migrate`, sau đó `npm.cmd run db:seed:demo`. Chạy lại seed giữ dữ liệu đã có, không reset mật khẩu/hồ sơ. Tài khoản mẫu nằm trong `backend/seeds/demo.js`, dùng dữ liệu giả và mật khẩu demo chung được băm bằng bcrypt trước khi lưu.
+- Commit T02 chỉ gồm 5 SQL migration, hai script migrate/seed, `backend/package.json`, dữ liệu seed, hai file test T02 và tài liệu kết quả này. Giữ `.env`, `docs/api-contract.md`, các `.gitkeep` và phần README đang sửa ngoài commit theo danh sách staging được yêu cầu.
