@@ -135,3 +135,59 @@ Giữ nguyên V001–V005, sửa local ở `docs/api-contract.md` và các `.git
 - Kết quả bộ backend trước khi thêm test seed: **25 pass, 0 fail, 0 skip**, gồm 16 test Express/JWT và 9 test migration. Đây là lượt riêng với kết quả **31 pass, 0 fail, 0 skip** sau khi bổ sung test seed đã ghi ở trên.
 - Chạy từ `backend/`: `npm.cmd run db:migrate`, sau đó `npm.cmd run db:seed:demo`. Chạy lại seed giữ dữ liệu đã có, không reset mật khẩu/hồ sơ. Tài khoản mẫu nằm trong `backend/seeds/demo.js`, dùng dữ liệu giả và mật khẩu demo chung được băm bằng bcrypt trước khi lưu.
 - Commit T02 chỉ gồm 5 SQL migration, hai script migrate/seed, `backend/package.json`, dữ liệu seed, hai file test T02 và tài liệu kết quả này. Giữ `.env`, `docs/api-contract.md`, các `.gitkeep` và phần README đang sửa ngoài commit theo danh sách staging được yêu cầu.
+
+## T03 — BE: kết nối và đọc tài khoản — 06/11/2026
+
+- Nhánh: `feat/tai-t03-dang-nhap-va-phan-quyen`.
+- Tạo `backend/src/config/db.js`: Pool dùng chung đọc cấu hình T02. Khi chạy mẫu ban đầu với pg hiện có, `connectionString` làm mất mật khẩu cấu hình riêng; ghép DB_USERNAME/DB_PASSWORD vào URL trong bộ nhớ trước khi tạo Pool và đặt timeout kết nối 5 giây. Không sửa `.env`, không in mật khẩu hoặc hash.
+- Tạo `backend/src/repositories/userRepository.js` đúng truy vấn được cung cấp: tìm email qua tham số `$1`, trả hàng đầu tiên hoặc `null`.
+- Chạy kiểm tra chỉ đọc bằng Node với `--env-file-if-exists=.env`: xác nhận `current_database() = student_jobs_nhom5`; tìm được cả 5 tài khoản seed đúng email/vai trò, ID dạng chuỗi, có hash và thời điểm tạo; email không tồn tại trả null; chuỗi SQL thử nghiệm được coi là giá trị email và trả null. Tổng 7 ca truy vấn đạt.
+- `node --check src/config/db.js` và `node --check src/repositories/userRepository.js`: đạt. `npm.cmd test`: 16 pass, 0 fail, 2 skip (hai bộ PostgreSQL T02 chưa bật RUN_DB_TESTS trong lượt này).
+- Đây là bước repository của API-02; chưa tạo endpoint `POST /api/auth/login`, chưa kiểm thử đăng nhập HTTP. Giữ nguyên các sửa local V001–V005 đang có; chưa stage/commit/push.
+
+## T03 — API-02: POST /api/auth/login — 06/11/2026
+
+- Tạo `src/services/authService.js`, `src/routes/authRoutes.js` đúng mẫu được yêu cầu; gắn router sau JSON parser trong `src/app.js`. Giữ nguyên `src/config/db.js` đã điều chỉnh và `src/repositories/userRepository.js`.
+- `.env` local chưa có JWT_SECRET: đã tạo khóa ngẫu nhiên 32 byte, không in hoặc đưa vào Git. File mẫu giữ trống JWT_SECRET.
+- Thêm `tests/auth.test.js`: kiểm thử HTTP validation không cần DB; khi bật RUN_DB_TESTS thì tạo PostgreSQL test riêng, xác nhận tên DB/DB trống, chạy migration/seed rồi thử đăng nhập. Điều chỉnh hai test health/foundation để có URL cấu hình test mặc định khi nạp app, không cần kết nối DB cho các ca này.
+- DB auth test: `student_jobs_nhom5_t03_test_1793940484825_fd31b981`. Tài khoản ADMIN giả chỉ được tạo ở DB test để xác nhận Demo 1 từ chối vai trò này.
+
+Đã chạy trong `backend/`:
+
+```powershell
+$env:RUN_DB_TESTS = '1'
+try {
+  node --env-file-if-exists=.env --test
+} finally {
+  Remove-Item Env:RUN_DB_TESTS
+}
+npm.cmd test
+```
+
+- Bộ đầy đủ có PostgreSQL: **53 pass, 0 fail, 0 skip** (31 ca trước đó và 22 ca auth, tính cả test cha).
+- `npm.cmd test` mặc định: **28 pass, 0 fail, 3 skip**; ba nhóm tích hợp PostgreSQL chỉ chạy khi bật RUN_DB_TESTS và nạp cấu hình.
+- HTTP 200 cho cả 5 tài khoản seed; email trim/lowercase, password giữ nguyên; JWT xác minh bằng HS256, `sub` dạng chuỗi, role đúng DB và `exp - iat = 3600`. Response có `token_type: Bearer`, `expires_in: 3600`, Cache-Control no-store, user chỉ có 4 trường công khai.
+- Đạt các lỗi 415 Content-Type; 400 JSON hỏng/body mảng/thiếu trường/trường thừa/email hoặc password không hợp lệ; 401 cùng INVALID_CREDENTIALS cho email không tồn tại, mật khẩu sai hoặc có khoảng trắng thêm, ADMIN. Phản hồi 401 có WWW-Authenticate Bearer. Thiếu secret trả lỗi 500 chung, không lộ chi tiết.
+- Giữ nguyên các sửa local V001–V005; chưa stage/commit/push. Chưa nối giao diện đăng nhập hoặc gắn phân quyền vào route nghiệp vụ.
+
+## T03 — Thử HTTP tại localhost:8080 — 06/11/2026
+
+- Gửi request trực tiếp từ terminal bằng Node fetch tới `POST http://localhost:8080/api/auth/login`, tương ứng bảng thao tác Postman được yêu cầu. Không thao tác ứng dụng Postman trong lượt này; không in token, mật khẩu hoặc hash.
+- Tài khoản SV: `sv.a@demo.nhom5.test`; NTD: `ntd.a@demo.nhom5.test`; dùng mật khẩu demo trong `backend/seeds/demo.js`.
+
+| Ca thử trên server local | Kết quả thực tế |
+|---|---|
+| Đăng nhập SV | 200, role STUDENT, có access_token, expires_in 3600, Cache-Control no-store |
+| Đăng nhập NTD | 200, role EMPLOYER, có access_token, expires_in 3600, Cache-Control no-store |
+| Đúng email, sai mật khẩu | 401 INVALID_CREDENTIALS, WWW-Authenticate Bearer |
+| Thêm role trong JSON | 400 FIELD_NOT_ALLOWED |
+| Bỏ password | 400 VALIDATION_ERROR |
+
+- **5/5 ca HTTP đạt**. JWT của hai lượt thành công được xác minh bằng khóa local và HS256, sub/role khớp user; response không có password_hash. Cả ba lỗi có details dạng mảng rỗng và trace_id.
+- Không thay đổi mã nguồn trong bước này; chưa stage/commit/push.
+
+## T03 — Chốt mốc API đăng nhập — 06/11/2026
+
+- Chạy lại `npm.cmd test` trong `backend/` sau khi có API-02: **28 pass, 0 fail, 3 skip**. Ba nhóm tích hợp PostgreSQL chưa bật RUN_DB_TESTS trong lượt này. Đây là kết quả trên working tree có các test auth và điều chỉnh cấu hình test đang ở local.
+- Commit theo danh sách được yêu cầu chỉ gồm `src/config/db.js`, `src/repositories/userRepository.js`, `src/services/authService.js`, `src/routes/authRoutes.js`, `src/app.js` và tài liệu này. Các file test T03/điều chỉnh test, `.env`, V001–V005 giữ ngoài commit này.
+- Đã đọc `src/middleware/requireAuth.js` và `src/middleware/errorHandler.js`; chưa sửa. Middleware hiện xác minh JWT HS256 và gắn claims vào `req.auth`, chưa đọc tài khoản/vai trò từ DB.
