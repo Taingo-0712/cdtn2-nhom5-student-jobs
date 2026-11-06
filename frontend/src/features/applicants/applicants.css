@@ -1,0 +1,27 @@
+.applicants { padding-block: 1rem; }
+.applicants h1 { margin-block: 0 0.5rem; font-size: clamp(1.5rem, 4vw, 2rem); }
+.applicants h2 { margin-block: 0 0.75rem; font-size: 1.15rem; }
+.applicants__muted { color: #4f5e70; }
+.applicants__panel { margin-block: 1.25rem; padding: 1.25rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: #fff; }
+.applicants__table-scroll { overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: #fff; }
+.applicants table { width: 100%; border-collapse: collapse; text-align: left; }
+.applicants caption { padding: 1rem; text-align: left; font-weight: 600; }
+.applicants th, .applicants td { padding: 0.9rem 1rem; border-top: 1px solid #dce2eb; }
+.applicants th { background: #edf2f7; }
+.applicants td:first-child { min-width: 9rem; overflow-wrap: anywhere; }
+.applicants a { color: #174ea6; text-underline-offset: 0.2em; }
+.applicants td a, .applicants__back { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.applicants button { min-height: 2.75rem; padding: 0.5rem 1rem; border: 1px solid #52627a; border-radius: 0.35rem; color: #172033; background: #fff; font: inherit; cursor: pointer; }
+.applicants button:disabled { color: #596579; background: #e8edf5; cursor: not-allowed; }
+.applicants :focus-visible { outline: 3px solid #235cca; outline-offset: 3px; }
+.applicants__pagination { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-block: 1rem; }
+.applicants__badge { display: inline-block; padding: 0.2rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.35rem; background: #edf2f7; white-space: nowrap; }
+.applicants dl { display: grid; grid-template-columns: minmax(8rem, 1fr) 2fr; gap: 0.75rem 1rem; }
+.applicants dt { color: #4f5e70; }
+.applicants dd { margin: 0; overflow-wrap: anywhere; }
+.applicants__filename { overflow-wrap: anywhere; }
+@media (max-width: 36rem) {
+  .applicants dl { grid-template-columns: 1fr; gap: 0.3rem; }
+  .applicants dd { margin-bottom: 0.65rem; }
+  .applicants__pagination { justify-content: flex-start; }
+}
