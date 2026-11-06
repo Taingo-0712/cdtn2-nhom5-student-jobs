@@ -60,11 +60,15 @@ const button = (label) => [...document.querySelectorAll('button')].find((node) =
 try {
   await waitFor(() => text().includes('Ứng viên A'), 'list did not load');
   check(document.activeElement.tagName === 'H1', 'heading focus missing');
+  check([...document.querySelectorAll('thead th')].map((node) => node.textContent).join('|') === 'Sinh viên|Ngày nộp|CV đã nộp|Kết quả đơn|Thao tác', 'WF13 columns do not match design');
+  check(document.querySelector('tbody .applicants__filename')?.textContent === 'cv-1001.pdf', 'list CV metadata missing');
   button('Trang sau').click();
   await waitFor(() => text().includes('Ứng viên B'), 'pagination did not load page 2');
   check(location.search === '?page=2', 'pagination not persisted in URL');
   document.querySelector('tbody a').click();
-  await waitFor(() => text().includes('cv-1002.pdf'), 'detail B did not load');
+  await waitFor(() => document.querySelector('.applicants__application') && document.querySelector('.applicants__filename--strong')?.textContent === 'cv-1002.pdf', 'detail B did not load');
+  check(document.querySelectorAll('.applicants__detail-main > section').length === 2, 'student and CV panels missing');
+  check(!/Email:|Điện thoại:|Giới thiệu trong hồ sơ:|Chưa cập nhật/.test(text()), 'unsupported profile fields displayed');
   check(!text().includes('cv-1001.pdf'), 'wrong CV');
   check(text().includes('Chờ tích hợp'), 'missing T05 placeholder');
   document.querySelector('.applicants__back').click();
