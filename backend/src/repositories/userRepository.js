@@ -11,4 +11,13 @@ async function findUserByEmail(email) {
   return rows[0] ?? null;
 }
 
-module.exports = { findUserByEmail };
+async function findUserRoleById(userId) {
+  const { rows } = await pool.query(
+    'SELECT role FROM users WHERE user_id = $1',
+    [userId]
+  );
+
+  return rows[0]?.role ?? null;
+}
+
+module.exports = { findUserByEmail, findUserRoleById };
