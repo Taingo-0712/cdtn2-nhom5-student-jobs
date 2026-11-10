@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { httpClient } from './api/httpClient.js';
 import StatusMessage from './components/StatusMessage.jsx';
+import LoginPage from './pages/auth/LoginPage.jsx';
 
 function FoundationPage() {
   const [result, setResult] = useState({ type: 'loading', text: 'Đang kết nối…' });
@@ -41,6 +42,7 @@ export default function App() {
       <main className="shell">
         <Routes>
           <Route path="/" element={<FoundationPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<StatusMessage type="empty">Trang không tồn tại.</StatusMessage>} />
         </Routes>
       </main>
