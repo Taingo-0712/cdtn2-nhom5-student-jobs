@@ -1,8 +1,24 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes, useNavigate } from 'react-router-dom';
 import { httpClient } from './api/httpClient.js';
+import { useAuth } from './auth/AuthContext.jsx';
 import StatusMessage from './components/StatusMessage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
+import RequireRole from './routes/RequireRole.jsx';
+import CreateJobPage from './pages/CreateJobPage.jsx';
+
+function CreateJobRoute() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  return (
+    <CreateJobPage
+      token={session.token}
+      onCancel={() => navigate('/')}
+      onCreated={() => navigate('/')}
+    />
+  );
+}
 
 function FoundationPage() {
   const [result, setResult] = useState({ type: 'loading', text: 'Đang kết nối…' });
@@ -43,6 +59,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<FoundationPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route element={<RequireRole roles={['EMPLOYER']} />}>
+            <Route path="/employer/jobs/new" element={<CreateJobRoute />} />
+          </Route>
           <Route path="*" element={<StatusMessage type="empty">Trang không tồn tại.</StatusMessage>} />
         </Routes>
       </main>

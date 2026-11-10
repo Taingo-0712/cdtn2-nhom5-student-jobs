@@ -1,0 +1,120 @@
+/* Khung trang đăng tin và tiêu đề. */
+.job-create {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  color: #202938;
+  background: #f6f7f9;
+}
+
+.job-create h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.job-create h1 + p {
+  margin: 0 0 1.5rem;
+  color: #626e7e;
+}
+
+/* Form bên trái rộng gấp đôi thẻ hướng dẫn bên phải. */
+.job-create__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.job-create__card {
+  padding: 1.5rem;
+  border: 1px solid #d9dfe7;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.job-create__card h2 {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+/* Xếp các trường theo từng hàng và giữ nhãn ngay trên ô nhập. */
+.job-create form {
+  display: grid;
+  gap: 1rem;
+}
+
+.job-create form h2 {
+  margin-bottom: 0;
+}
+
+.job-create__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.job-create label {
+  display: grid;
+  align-content: start;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Đồng bộ kích thước của ô nhập, ô mô tả và danh sách chọn. */
+.job-create :is(input, textarea, select) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d9dfe7;
+  border-radius: 0.25rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+}
+
+.job-create textarea {
+  resize: vertical;
+}
+
+.job-create label small {
+  color: #9b2929;
+}
+
+/* Nút Đăng tin màu xanh, nút Hủy nền trắng. */
+.job-create__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.job-create__actions button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d9dfe7;
+  border-radius: 0.25rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.job-create__actions button[type='submit'] {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.job-create__actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Trên màn hình nhỏ, form và hướng dẫn xếp thành một cột. */
+@media (max-width: 700px) {
+  .job-create__layout,
+  .job-create__row {
+    grid-template-columns: 1fr;
+  }
+}
