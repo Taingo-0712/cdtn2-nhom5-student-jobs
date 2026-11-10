@@ -16,3 +16,4 @@
 - PASS — FE `npm run build`; route WF11 được nối tại `/employer/jobs/new` và chỉ cho vai trò `EMPLOYER`.
 - Môi trường — Backend `8080`, PostgreSQL local; `JWT_SECRET` đã được đặt trong `.env` local bị Git bỏ qua. Đăng nhập NTD seed trả `200` và token Bearer.
 - CHƯA CHẠY — Thao tác UI WF11 trên trình duyệt tích hợp do browser automation không khả dụng trong phiên này.
+- PASS — Đăng tin từ WF11 bằng tài khoản nhà tuyển dụng. Đối chiếu trong pgAdmin: `job_id=4`, `employer_id=1`, `status=RECRUITING`. Sau khi gửi, giao diện về `/`. Kiểm tra luồng quay về danh sách WF10 khi tích hợp P03.
