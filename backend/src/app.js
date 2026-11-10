@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { ApiError, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./routes/authRoutes');
+const pool = require('./config/db');
+const createJobListRouter = require('./routes/jobListRoutes');
 
 const app = express();
 
@@ -10,6 +12,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
+app.use('/api', createJobListRouter(pool));
 
 app.get('/health', (req, res) => {
   res.json({ data: { status: 'ok' } });
