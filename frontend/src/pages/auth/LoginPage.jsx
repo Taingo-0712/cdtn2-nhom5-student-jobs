@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import '../../styles/login.css';
 
@@ -33,6 +34,9 @@ export default function LoginPage() {
       <>
         <h1>Đăng nhập</h1>
         <p role="status">Đăng nhập thành công. Vai trò {session.user.role}.</p>
+        {session.user.role === 'EMPLOYER' && (
+          <Link to="/employer/jobs/new">Đăng tin tuyển dụng</Link>
+        )}
         <button type="button" onClick={signOut}>Đăng xuất</button>
       </>
     );

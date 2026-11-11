@@ -1,12 +1,32 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes, useNavigate } from 'react-router-dom';
 import { httpClient } from './api/httpClient.js';
+import { useAuth } from './auth/AuthContext.jsx';
 import StatusMessage from './components/StatusMessage.jsx';
+import CreateJobPage from './pages/CreateJobPage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import EmployerJobsPage from './pages/employer/EmployerJobsPage.jsx';
 import JobListPage from './pages/jobs/JobListPage.jsx';
 import JobDetailPage from './pages/jobs/JobDetailPage.jsx';
 import RequireRole from './routes/RequireRole.jsx';
+
+function CreateJobRoute() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  // Quay về WF10 để danh sách tải lại sau khi đăng thành công.
+  function returnToEmployerJobs() {
+    navigate('/employer/jobs');
+  }
+
+  return (
+    <CreateJobPage
+      token={session.token}
+      onCancel={returnToEmployerJobs}
+      onCreated={returnToEmployerJobs}
+    />
+  );
+}
 
 function FoundationPage() {
   const [result, setResult] = useState({ type: 'loading', text: 'Đang kết nối…' });
@@ -24,7 +44,10 @@ function FoundationPage() {
       })
       .catch((error) => {
         if (error.name !== 'AbortError') {
-          setResult({ type: 'error', text: 'Không kết nối được backend. Kiểm tra cổng 8080.' });
+          setResult({
+            type: 'error',
+            text: 'Không kết nối được backend. Kiểm tra cổng 8080.',
+          });
         }
       });
 
@@ -53,9 +76,13 @@ export default function App() {
           <Route path="/jobs" element={<JobListPage />} />
           <Route path="/jobs/:jobId" element={<JobDetailPage />} />
 
-          {/* WF10 dùng bộ kiểm tra vai trò của Tài để bảo vệ trang. */}
+          {/* Cả WF10 và WF11 đều yêu cầu vai trò nhà tuyển dụng. */}
           <Route element={<RequireRole roles={['EMPLOYER']} />}>
-            <Route path="/employer/jobs" element={<EmployerJobsPage />} />
+            <Route
+              path="/employer/jobs"
+              element={<EmployerJobsPage createJobPath="/employer/jobs/new" />}
+            />
+            <Route path="/employer/jobs/new" element={<CreateJobRoute />} />
           </Route>
 
           <Route

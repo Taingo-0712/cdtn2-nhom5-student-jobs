@@ -1,16 +1,31 @@
 import { httpClient } from './httpClient.js';
-// Dùng địa chỉ backend và bộ xử lý lỗi chung của dự án.
 
+// WF11 lấy danh mục ngành để hiển thị trong form.
+export function listJobCategories() {
+  return httpClient('/api/job-categories');
+}
+
+// WF11 gửi dữ liệu tạo tin cùng token nhà tuyển dụng.
+export function createJob(payload, token) {
+  return httpClient('/api/jobs', {
+    method: 'POST',
+    json: payload,
+    token,
+  });
+}
+
+// WF04 tải danh sách việc làm công khai theo trang.
 export function getJobs({ page = 1, size = 20, signal } = {}) {
-  // WF04 dùng page và size để tải đúng trang danh sách.
   const query = new URLSearchParams({ page, size });
   return httpClient(`/api/jobs?${query.toString()}`, { signal });
 }
 
+// WF05 tải chi tiết theo mã tin trên URL.
 export function getJobById(jobId, { signal } = {}) {
-  // WF05 dùng mã của tin được bấm để tải chi tiết.
   return httpClient(`/api/jobs/${encodeURIComponent(jobId)}`, { signal });
 }
+
+// WF10 tải danh sách tin của nhà tuyển dụng đang đăng nhập.
 export function getEmployerJobs(token, { page = 1, size = 20, signal } = {}) {
   const query = new URLSearchParams({ page, size });
 
