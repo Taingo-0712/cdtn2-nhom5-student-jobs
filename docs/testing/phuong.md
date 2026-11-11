@@ -17,3 +17,9 @@
 - Môi trường — Backend `8080`, PostgreSQL local; `JWT_SECRET` đã được đặt trong `.env` local bị Git bỏ qua. Đăng nhập NTD seed trả `200` và token Bearer.
 - CHƯA CHẠY — Thao tác UI WF11 trên trình duyệt tích hợp do browser automation không khả dụng trong phiên này.
 - PASS — Đăng tin từ WF11 bằng tài khoản nhà tuyển dụng. Đối chiếu trong pgAdmin: `job_id=4`, `employer_id=1`, `status=RECRUITING`. Sau khi gửi, giao diện về `/`. Kiểm tra luồng quay về danh sách WF10 khi tích hợp P03.
+## Kiểm thử tích hợp P01 và P03
+
+- PASS — Nhà tuyển dụng A mở WF10, bấm Đăng tin tuyển dụng để sang WF11, điền form và đăng tin.
+- PASS — Sau khi đăng, trình duyệt tự quay về `/employer/jobs`. Bảng WF10 hiển thị tin mới `nv bán thuốc` với trạng thái Đang tuyển.
+- PASS — Frontend build thành công bằng `npm.cmd --prefix frontend run build`.
+- Commit tích hợp đã kiểm thử: `3f5213a`.
