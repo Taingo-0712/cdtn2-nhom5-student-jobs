@@ -30,27 +30,38 @@ const jobTables = `
   JOIN public.job_categories AS c ON c.category_id = j.category_id
 `;
 
-async function listJobs(pool, { limit, offset }) {
-  // Đọc dữ liệu của một trang và tổng số tin trong cùng truy vấn.
+async function listJobs(pool, { limit, offset, employerId }) {
+  // API-12 truyền mã nhà tuyển dụng. API-09 dùng danh sách công khai.
+  const filterByOwner = employerId !== undefined;
+  const ownerFilter = filterByOwner ? 'WHERE j.employer_id = $3' : '';
+  const parameters = filterByOwner
+    ? [limit, offset, employerId]
+    : [limit, offset];
+
+  // Dùng cùng điều kiện lọc cho tổng số tin và dữ liệu của trang.
   const { rows } = await pool.query(
     `
       SELECT totals.total_elements, page_jobs.*
       FROM (
         SELECT COUNT(*) AS total_elements
-        FROM public.job_posts
+        FROM public.job_posts AS j
+        ${ownerFilter}
       ) AS totals
       LEFT JOIN LATERAL (
         SELECT ${jobSummaryColumns}
         ${jobTables}
+        ${ownerFilter}
         ORDER BY j.created_at DESC, j.job_id DESC
         LIMIT $1 OFFSET $2
       ) AS page_jobs ON TRUE
       ORDER BY page_jobs.created_at DESC, page_jobs.job_id::bigint DESC
     `,
-    [limit, offset]
+    parameters
   );
 
   const totalElements = Number(rows[0].total_elements);
+
+  // Loại dòng trống khi trang hết dữ liệu và bỏ cột tổng khỏi từng tin.
   const jobs = rows
     .filter((row) => row.job_id !== null)
     .map(({ total_elements, ...job }) => job);
@@ -59,7 +70,7 @@ async function listJobs(pool, { limit, offset }) {
 }
 
 async function findJobById(pool, jobId) {
-  // API chi tiết lấy thêm mô tả và tìm đúng một tin theo mã.
+  // API-10 lấy thêm mô tả và tìm đúng tin theo mã.
   const { rows } = await pool.query(
     `
       SELECT ${jobSummaryColumns}, j.description
@@ -70,7 +81,6 @@ async function findJobById(pool, jobId) {
   );
 
   return rows[0] ?? null;
-  // Trả null nếu không tìm thấy để route xử lý lỗi 404.
 }
 
 module.exports = { listJobs, findJobById };

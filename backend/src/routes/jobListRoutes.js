@@ -1,21 +1,23 @@
 const express = require('express');
 const { ApiError } = require('../middleware/errorHandler');
+const requireAuth = require('../middleware/requireAuth');
+const requireRole = require('../middleware/requireRole');
 const { listJobs, findJobById } = require('../repositories/jobQueryRepository');
 const { parseJobListQuery } = require('../validators/jobListQueryValidator');
 
 function createJobListRouter(pool) {
   const router = express.Router();
 
-  // API-09: đọc danh sách tin theo trang.
-  router.get('/jobs', async (req, res, next) => {
+  // API-09 và API-12 dùng chung cách đọc và trả dữ liệu phân trang.
+  async function sendJobList(req, res, next, employerId) {
     try {
       const { page, size } = parseJobListQuery(req.query);
       const offset = (BigInt(page) - 1n) * BigInt(size);
-      // Trang 1 bỏ qua 0 tin. Trang 2 bỏ qua đúng size tin.
 
       const { jobs, totalElements } = await listJobs(pool, {
         limit: size,
         offset: offset.toString(),
+        employerId,
       });
 
       res.json({
@@ -30,6 +32,14 @@ function createJobListRouter(pool) {
     } catch (error) {
       next(error);
     }
+  }
+
+  // API-09: danh sách tin công khai.
+  router.get('/jobs', (req, res, next) => sendJobList(req, res, next));
+
+  // API-12: dùng mã tài khoản từ token đã xác thực để lọc tin theo chủ.
+  router.get('/employer/jobs', requireAuth, requireRole('EMPLOYER'), (req, res, next) => {
+    return sendJobList(req, res, next, req.auth.sub);
   });
 
   // API-10: đọc chi tiết một tin theo mã trên đường dẫn.
@@ -42,7 +52,6 @@ function createJobListRouter(pool) {
         throw new ApiError(400, 'INVALID_ID', 'Mã tin tuyển dụng không hợp lệ.');
       }
 
-      // API-10 chỉ nhận mã trên đường dẫn, ví dụ /api/jobs/4.
       if (Object.keys(req.query).length > 0) {
         throw new ApiError(400, 'INVALID_QUERY', 'API chi tiết tin không nhận tham số query.');
       }
@@ -54,7 +63,6 @@ function createJobListRouter(pool) {
 
       res.json({ data: job });
     } catch (error) {
-      // Để bộ xử lý lỗi chung trả phản hồi JSON theo API Contract.
       next(error);
     }
   });

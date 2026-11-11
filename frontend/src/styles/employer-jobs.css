@@ -1,0 +1,101 @@
+.employer-jobs {
+  display: grid;
+  gap: 20px;
+  padding-block: 24px 40px;
+  color: #202938;
+}
+
+.employer-jobs-heading h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 1.75rem);
+}
+
+.employer-jobs-heading p {
+  margin: 6px 0 0;
+  color: #626e7e;
+  font-size: 0.875rem;
+}
+
+.employer-jobs-primary.job-button {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.employer-jobs-primary.job-button:hover:not(:disabled),
+.employer-jobs-primary.job-button:focus-visible {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.employer-jobs-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #d9dfe7;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.employer-jobs-table {
+  width: 100%;
+  min-width: 740px;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.employer-jobs-table th,
+.employer-jobs-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #d9dfe7;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.employer-jobs-table thead {
+  background: #f6f7f9;
+}
+
+.employer-jobs-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.employer-jobs-category {
+  display: block;
+  margin-top: 3px;
+  color: #626e7e;
+  font-weight: 400;
+}
+
+.employer-jobs-work-time {
+  white-space: pre-line;
+}
+
+.employer-jobs-table a {
+  color: #2563eb;
+}
+
+.employer-jobs-table .employer-jobs-empty {
+  padding: 24px;
+  color: #626e7e;
+  text-align: center;
+}
+
+.employer-jobs-rules {
+  padding: 20px 24px;
+  border: 1px solid #d9dfe7;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.employer-jobs-rules h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.employer-jobs-rules p {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}

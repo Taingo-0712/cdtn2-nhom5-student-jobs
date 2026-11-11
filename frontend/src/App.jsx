@@ -3,8 +3,10 @@ import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { httpClient } from './api/httpClient.js';
 import StatusMessage from './components/StatusMessage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
+import EmployerJobsPage from './pages/employer/EmployerJobsPage.jsx';
 import JobListPage from './pages/jobs/JobListPage.jsx';
-import JobDetailPage from './pages/jobs/JobDetailPage.jsx'; // Nạp màn WF05.
+import JobDetailPage from './pages/jobs/JobDetailPage.jsx';
+import RequireRole from './routes/RequireRole.jsx';
 
 function FoundationPage() {
   const [result, setResult] = useState({ type: 'loading', text: 'Đang kết nối…' });
@@ -43,14 +45,23 @@ export default function App() {
       <header className="shell">
         <Link to="/">Việc làm sinh viên Nhóm 5</Link>
       </header>
+
       <main className="shell">
         <Routes>
           <Route path="/" element={<FoundationPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/jobs" element={<JobListPage />} />
-          {/* WF05: jobId là mã tin lấy từ URL. */}
           <Route path="/jobs/:jobId" element={<JobDetailPage />} />
-          <Route path="*" element={<StatusMessage type="empty">Trang không tồn tại.</StatusMessage>} />
+
+          {/* WF10 dùng bộ kiểm tra vai trò của Tài để bảo vệ trang. */}
+          <Route element={<RequireRole roles={['EMPLOYER']} />}>
+            <Route path="/employer/jobs" element={<EmployerJobsPage />} />
+          </Route>
+
+          <Route
+            path="*"
+            element={<StatusMessage type="empty">Trang không tồn tại.</StatusMessage>}
+          />
         </Routes>
       </main>
     </BrowserRouter>
