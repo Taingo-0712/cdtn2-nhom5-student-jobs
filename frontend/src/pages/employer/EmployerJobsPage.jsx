@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getEmployerJobs } from '../../api/jobApi.js';
+import JobStatusActions from '../../components/JobStatusActions.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { formatJobSalary, statusLabels } from '../../utils/jobDisplay.js';
 import '../../styles/job-list.css';
@@ -10,6 +11,8 @@ export default function EmployerJobsPage({ createJobPath, getApplicantsPath }) {
   const { session } = useAuth();
   const token = session.token;
   const [page, setPage] = useState(1);
+  const [refresh, setRefresh] = useState(0);
+  const [notice, setNotice] = useState('');
   const [result, setResult] = useState({ loading: true });
 
   useEffect(() => {
@@ -29,10 +32,17 @@ export default function EmployerJobsPage({ createJobPath, getApplicantsPath }) {
       });
 
     return () => controller.abort();
-  }, [token, page]);
+  }, [token, page, refresh]);
+
+  function handleStatusChanged(updated) {
+    setNotice(`Đã cập nhật trạng thái tin thành ${statusLabels[updated.status]}.`);
+    setResult({ loading: true });
+    setRefresh((value) => value + 1);
+  }
 
   function goToPage(nextPage) {
     setResult({ loading: true });
+    setNotice('');
     setPage(nextPage);
   }
 
@@ -55,6 +65,7 @@ export default function EmployerJobsPage({ createJobPath, getApplicantsPath }) {
         )}
       </div>
 
+      {notice && <p role="status">{notice}</p>}
       {result.loading && <p role="status">Đang tải danh sách tin…</p>}
       {result.error && <p role="alert">Tải danh sách thất bại. {result.error}</p>}
 
@@ -95,11 +106,10 @@ export default function EmployerJobsPage({ createJobPath, getApplicantsPath }) {
                     <td>{job.location_detail}, {job.city}</td>
                     <td>{statusLabels[job.status] ?? job.status}</td>
                     <td>
-                      {getApplicantsPath ? (
+                      {getApplicantsPath && (
                         <Link to={getApplicantsPath(job.job_id)}>Xem ứng viên</Link>
-                      ) : (
-                        '—'
                       )}
+                      <JobStatusActions job={job} token={token} onSuccess={handleStatusChanged} />
                     </td>
                   </tr>
                 ))}

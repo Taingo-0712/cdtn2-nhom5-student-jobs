@@ -34,5 +34,35 @@ async function createJob(db, employerId, job) {
   // Trả tin vừa tạo hoặc null nếu mã ngành không tồn tại.
 }
 
-module.exports = { createJob };
-// Cho phép route API-08 và ca kiểm thử gọi hàm này.
+async function lockJob(db, jobId) {
+  // Nộp đơn, quyết định đơn và đổi trạng thái cùng khóa hàng này trước.
+  const { rows } = await db.query(
+    'SELECT employer_id::text, status FROM public.job_posts WHERE job_id = $1 FOR UPDATE',
+    [jobId]
+  );
+  return rows[0] ?? null;
+}
+
+async function getRecruitmentConditions(db, jobId) {
+  const { rows } = await db.query(
+    `SELECT
+       EXISTS (SELECT 1 FROM public.applications WHERE job_id = $1 AND status = 'PENDING') AS "hasPending",
+       EXISTS (SELECT 1 FROM public.applications WHERE job_id = $1 AND status = 'APPROVED') AS "hasApproved"`,
+    [jobId]
+  );
+  return rows[0];
+}
+
+async function updateJobStatus(db, jobId, status) {
+  // Ghi thời điểm tại câu UPDATE, kể cả khi giao dịch vừa phải chờ khóa.
+  const { rows } = await db.query(
+    `UPDATE public.job_posts
+     SET status = $2, updated_at = statement_timestamp()
+     WHERE job_id = $1
+     RETURNING job_id::text, status, completed_at, updated_at`,
+    [jobId, status]
+  );
+  return rows[0];
+}
+
+module.exports = { createJob, lockJob, getRecruitmentConditions, updateJobStatus };

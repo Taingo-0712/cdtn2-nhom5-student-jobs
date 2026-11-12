@@ -34,3 +34,12 @@ export function getEmployerJobs(token, { page = 1, size = 20, signal } = {}) {
     signal,
   });
 }
+
+// WF10 và WF13 gửi trạng thái đích qua cùng API-19.
+export function updateJobStatus(jobId, status, token) {
+  return httpClient(`/api/jobs/${encodeURIComponent(jobId)}/status`, {
+    method: 'PATCH',
+    json: { status },
+    token,
+  });
+}

@@ -3,10 +3,18 @@ const { ApiError } = require('../middleware/errorHandler');
 const requireAuth = require('../middleware/requireAuth');
 const requireRole = require('../middleware/requireRole');
 const { listJobs, findJobById } = require('../repositories/jobQueryRepository');
+const { changeJobStatus } = require('../services/jobStatusService');
 const { parseJobListQuery } = require('../validators/jobListQueryValidator');
 
 function createJobListRouter(pool) {
   const router = express.Router();
+
+  // Mã tin là chuỗi số nguyên dương trong phạm vi BIGINT.
+  function validateJobId(jobId) {
+    if (!/^[1-9][0-9]{0,18}$/.test(jobId) || BigInt(jobId) > 9223372036854775807n) {
+      throw new ApiError(400, 'INVALID_ID', 'Mã tin tuyển dụng không hợp lệ.');
+    }
+  }
 
   // API-09 và API-12 dùng chung cách đọc và trả dữ liệu phân trang.
   async function sendJobList(req, res, next, employerId) {
@@ -47,10 +55,7 @@ function createJobListRouter(pool) {
     try {
       const { jobId } = req.params;
 
-      // Mã tin là chuỗi số nguyên dương trong phạm vi BIGINT.
-      if (!/^[1-9][0-9]{0,18}$/.test(jobId) || BigInt(jobId) > 9223372036854775807n) {
-        throw new ApiError(400, 'INVALID_ID', 'Mã tin tuyển dụng không hợp lệ.');
-      }
+      validateJobId(jobId);
 
       if (Object.keys(req.query).length > 0) {
         throw new ApiError(400, 'INVALID_QUERY', 'API chi tiết tin không nhận tham số query.');
@@ -65,6 +70,33 @@ function createJobListRouter(pool) {
     } catch (error) {
       next(error);
     }
+  });
+
+  // API-19: P04 triển khai xác nhận đã nhận người.
+  router.patch('/jobs/:jobId/status', requireAuth, requireRole('EMPLOYER'), async (req, res) => {
+    const { jobId } = req.params;
+    validateJobId(jobId);
+
+    if (Object.keys(req.query).length > 0) {
+      throw new ApiError(400, 'INVALID_QUERY', 'API đổi trạng thái không nhận tham số query.');
+    }
+    if (!req.is('application/json')) {
+      throw new ApiError(415, 'UNSUPPORTED_MEDIA_TYPE', 'Yêu cầu phải gửi dữ liệu JSON.');
+    }
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Dữ liệu đổi trạng thái không hợp lệ.');
+    }
+    if (Object.keys(body).some((key) => key !== 'status')) {
+      throw new ApiError(400, 'FIELD_NOT_ALLOWED', 'Yêu cầu chỉ được gửi trường status.');
+    }
+    const status = typeof body.status === 'string' ? body.status.trim() : '';
+    if (!['FILLED', 'COMPLETED'].includes(status)) {
+      throw new ApiError(400, 'VALIDATION_ERROR', 'Trạng thái yêu cầu không hợp lệ.');
+    }
+
+    const job = await changeJobStatus(pool, jobId, req.auth.sub, status);
+    res.json({ data: job });
   });
 
   return router;
